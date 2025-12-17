@@ -9,17 +9,28 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      - name: Extract repository name
+        id: repo
+        run: |
+          # Get just the repo name from the full path
+          REPO_NAME=$(basename ${{ github.repository }})
+          echo "name=$REPO_NAME" >> $GITHUB_OUTPUT
+      
       - name: Mirror to GitHub
         env:
           MIRROR_GITHUB: ${{ secrets.MIRROR_GITHUB }}
+          REPO_NAME: ${{ steps.repo.outputs.name }}
         run: |
-          git remote add github https://$MIRROR_GITHUB@github.com/${{ github.repository }}.git || \
-            git remote set-url github https://$MIRROR_GITHUB@github.com/${{ github.repository }}.git
+          git remote add github https://$MIRROR_GITHUB@github.com/joshuablais/$REPO_NAME.git || \
+            git remote set-url github https://$MIRROR_GITHUB@github.com/joshuablais/$REPO_NAME.git
           git push --mirror github
+      
       - name: Mirror to Codeberg
         env:
           MIRROR_CODEBERG: ${{ secrets.MIRROR_CODEBERG }}
+          REPO_NAME: ${{ steps.repo.outputs.name }}
         run: |
-          git remote add codeberg https://$MIRROR_CODEBERG@codeberg.org/${{ github.repository }}.git || \
-            git remote set-url codeberg https://$MIRROR_CODEBERG@codeberg.org/${{ github.repository }}.git
+          git remote add codeberg https://$MIRROR_CODEBERG@codeberg.org/joshuablais/$REPO_NAME.git || \
+            git remote set-url codeberg https://$MIRROR_CODEBERG@codeberg.org/joshuablais/$REPO_NAME.git
           git push --mirror codeberg
