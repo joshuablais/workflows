@@ -1,0 +1,25 @@
+name: Mirror to External Platforms
+on:
+  push:
+    branches: [master, main]
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Mirror to GitHub
+        env:
+          MIRROR_GITHUB: ${{ secrets.MIRROR_GITHUB }}
+        run: |
+          git remote add github https://$MIRROR_GITHUB@github.com/${{ github.repository }}.git || \
+            git remote set-url github https://$MIRROR_GITHUB@github.com/${{ github.repository }}.git
+          git push --mirror github
+      - name: Mirror to Codeberg
+        env:
+          MIRROR_CODEBERG: ${{ secrets.MIRROR_CODEBERG }}
+        run: |
+          git remote add codeberg https://$MIRROR_CODEBERG@codeberg.org/${{ github.repository }}.git || \
+            git remote set-url codeberg https://$MIRROR_CODEBERG@codeberg.org/${{ github.repository }}.git
+          git push --mirror codeberg
