@@ -1,0 +1,35 @@
+name: NixOS Deployment
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hosts/**'
+      - 'modules/**'
+      - 'flake.nix'
+      - 'flake.lock'
+jobs:
+  deploy:
+    runs-on: nix
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build NixOS configuration
+        run: |
+          nix build .#nixosConfigurations.${{ secrets.HOST_NAME }}.config.system.build.toplevel
+      
+      - name: Deploy to host
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST_NAME: ${{ secrets.HOST_NAME }}
+        run: |
+          nixos-rebuild switch \
+            --flake .#$HOST_NAME \
+            --target-host $HOST_NAME \
+            --build-host localhost \
+            --use-remote-sudo
+      
+      - name: Verify deployment
+        env:
+          HOST_NAME: ${{ secrets.HOST_NAME }}
+        run: |
+          ssh $HOST_NAME "systemctl is-system-running"

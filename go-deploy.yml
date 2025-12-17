@@ -1,0 +1,53 @@
+name: Deploy Go Application
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      
+      - name: Build binary
+        run: |
+          CGO_ENABLED=0 go build \
+            -ldflags="-s -w -X main.version=$(git describe --tags --always)" \
+            -o bin/app ./cmd/app
+      
+      - name: Deploy to server
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Copy binary
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            bin/app deploy@$DEPLOY_HOST:/opt/$APP_NAME/
+          
+          # Restart service
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            deploy@$DEPLOY_HOST \
+            "sudo systemctl restart $APP_NAME.service"
+      
+      - name: Verify deployment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+        run: |
+          sleep 5
+          curl -f https://$DEPLOY_HOST/health || exit 1
