@@ -7,4 +7,5 @@ Mirrored to github/codeberg for redundancy, we use forgejo as our cannonical sou
 ** Current actions:
 mirror
 go-build
+go-test
 nixos-deploy
