@@ -4,3 +4,7 @@ Workflows for Forgejo Runners.
 
 Mirrored to github/codeberg for redundancy, we use forgejo as our cannonical source of truth, then pushing outward.
 
+** Current actions:
+mirror
+go-build
+nixos-deploy
